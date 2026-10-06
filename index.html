@@ -61,7 +61,7 @@ header.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-
 .toggle{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:var(--muted);cursor:pointer;user-select:none;background:var(--card);border:1px solid var(--line);padding:6px 12px;border-radius:999px}
 .toggle input{accent-color:var(--accent);width:16px;height:16px;margin:0}
 .lang{display:inline-flex;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:3px;gap:2px}
-.lang button{border:0;background:transparent;font-family:var(--f-mono);font-size:13px;font-weight:600;padding:4px 12px;border-radius:999px;cursor:pointer;color:var(--muted)}
+.lang button{border:0;background:transparent;font-family:var(--f-mono);font-size:13px;font-weight:600;padding:4px 10px;border-radius:999px;cursor:pointer;color:var(--muted)}
 .lang button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);background:var(--card);padding:10px 16px;border-radius:10px;cursor:pointer;font-weight:600;font-size:15px;transition:transform .08s ease,background .15s}
@@ -852,7 +852,7 @@ quiz:[
 
 /* ===== Хранение прогресса (только в этом браузере) ===== */
 const KEY="ekpod-trainer-v1";
-let S={known:{},best:{},cz:true,lang:"ru"};
+let S={known:{},best:{},cz:true,lang:"ru",theme:"auto"};
 try{const raw=localStorage.getItem(KEY);if(raw){const o=JSON.parse(raw);S={...S,...o}}}catch(e){}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 
@@ -899,6 +899,9 @@ let keyHandler=null;
 document.addEventListener("keydown",e=>{if(keyHandler&&!e.metaKey&&!e.ctrlKey&&!e.altKey)keyHandler(e)});
 function plural(n,[a,b,c]){if(isCz())return n===1?a:(n>=2&&n<=4?b:c);n=Math.abs(n)%100;const m=n%10;if(n>10&&n<20)return c;if(m>1&&m<5)return b;if(m===1)return a;return c}
 function setLangAttr(){document.documentElement.lang=isCz()?"cs":"ru"}
+/* тема: auto — как в системе, light / dark — выбор пользователя */
+function applyTheme(){const r=document.documentElement;if(S.theme==="light"||S.theme==="dark")r.setAttribute("data-theme",S.theme);else r.removeAttribute("data-theme")}
+const THEMES={ru:{auto:"Авто",light:"Светлая",dark:"Тёмная",lbl:"Тема"},cz:{auto:"Auto",light:"Světlý",dark:"Tmavý",lbl:"Motiv"}};
 
 function header(){
   return `<header class="top">
@@ -907,6 +910,9 @@ function header(){
       <div class="lang" role="group" aria-label="Язык / Jazyk">
         <button data-lang="ru" aria-pressed="${!isCz()}">RU</button>
         <button data-lang="cz" aria-pressed="${isCz()}">CZ</button>
+      </div>
+      <div class="lang" role="group" aria-label="${THEMES[S.lang].lbl}">
+        ${["auto","light","dark"].map(k=>`<button data-theme-set="${k}" aria-pressed="${S.theme===k}">${k==="light"?"☀ ":k==="dark"?"☾ ":""}${THEMES[S.lang][k]}</button>`).join("")}
       </div>
       <label class="toggle" for="czToggle"><input type="checkbox" id="czToggle" ${S.cz?"checked":""}> ${L().alt}</label>
     </div>
@@ -917,6 +923,9 @@ function bindHeader(rerender){
   c.addEventListener("change",()=>{S.cz=c.checked;save();rerender()});
   app.querySelectorAll("[data-lang]").forEach(b=>b.addEventListener("click",()=>{
     if(S.lang===b.dataset.lang)return;S.lang=b.dataset.lang;save();setLangAttr();rerender()}));
+  app.querySelectorAll("[data-theme-set]").forEach(b=>b.addEventListener("click",()=>{
+    S.theme=b.dataset.themeSet;save();applyTheme();
+    app.querySelectorAll("[data-theme-set]").forEach(x=>x.setAttribute("aria-pressed",String(x===b)))}));
 }
 
 /* ===== Главный экран ===== */
@@ -1123,6 +1132,7 @@ function quizSession(t,items){
 }
 
 setLangAttr();
+applyTheme();
 home();
 </script>
 </body>
